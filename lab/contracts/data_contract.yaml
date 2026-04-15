@@ -3,7 +3,7 @@
 
 version: "1.0"
 dataset: "kb_chunk_export"
-owner_team: "__TODO__"
+owner_team: "CS IT Helpdesk Team"
 
 schema_cleaned:
   chunk_id:
@@ -19,6 +19,7 @@ schema_cleaned:
     required: true
     constraints:
       min_length: 8
+      max_length: 2000
   effective_date:
     type: date
     required: true
@@ -32,11 +33,23 @@ quality_rules:
   - id: "no_stale_refund_window"
     description: "Không được để chunk policy refund chứa cửa sổ 14 ngày (lệch so với v4 = 7 ngày)"
     severity: "halt"
+  # Sprint 2 — Rules mới
+  - id: "strip_bom_and_control_chars"
+    description: "Loại BOM (\\ufeff) và ASCII control chars khỏi doc_id và chunk_text trước mọi rule khác. Phổ biến khi export CSV từ Excel trên Windows."
+    severity: "fix"
+  - id: "no_future_effective_date"
+    description: "Quarantine chunk có effective_date > 180 ngày kể từ exported_at — policy chưa có hiệu lực không nên đưa vào RAG."
+    severity: "halt"
+    threshold_days: 180
+  - id: "no_oversized_chunk"
+    description: "Quarantine chunk_text > 2000 ký tự — dấu hiệu merge lỗi hoặc dump toàn bộ document. all-MiniLM-L6-v2 giới hạn 256 tokens."
+    severity: "halt"
+    max_length: 2000
 
 freshness:
   measured_at: "publish"  # ingest | cleaned | publish
   sla_hours: 24
-  alert_channel: "__TODO__"
+  alert_channel: "#data-pipeline-alerts"
 
 canonical_sources:
   - path: "data/docs/policy_refund_v4.txt"

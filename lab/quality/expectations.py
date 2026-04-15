@@ -2,6 +2,10 @@
 Expectation suite đơn giản (không bắt buộc Great Expectations).
 
 Sinh viên có thể thay bằng GE / pydantic / custom — miễn là có halt có kiểm soát.
+
+Sprint 2 — Expectations mới:
+  E7 — all_allowed_doc_ids_represented (warn): Mỗi doc_id trong allowlist phải có ít nhất 1 chunk.
+  E8 — no_unexpected_clean_marker (halt): Marker [cleaned:...] chỉ được xuất hiện trong policy_refund_v4.
 """
 
 from __future__ import annotations
@@ -9,6 +13,19 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Tuple
+
+# Phải đồng bộ với ALLOWED_DOC_IDS trong transform/cleaning_rules.py.
+_ALLOWED_DOC_IDS = frozenset(
+    {
+        "policy_refund_v4",
+        "sla_p1_2026",
+        "it_helpdesk_faq",
+        "hr_leave_policy",
+    }
+)
+
+# Regex nhận diện marker pipeline cleaning để kiểm tra E8.
+_CLEAN_MARKER_RE = re.compile(r"\[cleaned:")
 
 
 @dataclass
@@ -109,6 +126,40 @@ def run_expectations(cleaned_rows: List[Dict[str, Any]]) -> Tuple[List[Expectati
             ok6,
             "halt",
             f"violations={len(bad_hr_annual)}",
+        )
+    )
+
+    # E7 (Sprint 2): Mỗi doc_id trong allowlist phải có ít nhất 1 chunk trong cleaned.
+    # severity=warn vì export thiếu một doc là vấn đề coverage, không phải data corrupt.
+    # metric_impact: inject scenario xóa mọi row sla_p1_2026 → WARN missing_doc_ids=['sla_p1_2026'].
+    present_ids = {(r.get("doc_id") or "").strip() for r in cleaned_rows}
+    missing_ids = sorted(_ALLOWED_DOC_IDS - present_ids)
+    ok7 = len(missing_ids) == 0
+    results.append(
+        ExpectationResult(
+            "all_allowed_doc_ids_represented",
+            ok7,
+            "warn",
+            f"missing_doc_ids={missing_ids}",
+        )
+    )
+
+    # E8 (Sprint 2): Marker [cleaned:...] chỉ được phép xuất hiện trong policy_refund_v4.
+    # severity=halt vì marker trong doc khác dấu hiệu pipeline bug nghiêm trọng.
+    # metric_impact: inject 1 row hr_leave_policy có [cleaned: stale_refund_window] → HALT.
+    unexpected_markers = [
+        r
+        for r in cleaned_rows
+        if r.get("doc_id") != "policy_refund_v4"
+        and _CLEAN_MARKER_RE.search(r.get("chunk_text") or "")
+    ]
+    ok8 = len(unexpected_markers) == 0
+    results.append(
+        ExpectationResult(
+            "no_unexpected_clean_marker",
+            ok8,
+            "halt",
+            f"unexpected_marker_count={len(unexpected_markers)}",
         )
     )
 
