@@ -8,7 +8,8 @@
 
 | Nguồn | Phương thức ingest | Failure mode chính | Metric / alert |
 |-------|-------------------|-------------------|----------------|
-| … | … | … | … |
+| `data/raw/policy_export_dirty.csv` (export từ hệ nguồn KB/policy) | Batch export (CSV) → ingest file | Duplicate dòng; `doc_id` lạ; `effective_date` thiếu/không ISO; conflict version (HR 10 vs 12 ngày); chunk refund stale (14 vs 7 ngày) | `raw_records`, `cleaned_records`, `quarantine_records`; alert nếu `quarantine_records/raw_records` tăng đột biến hoặc expectation `refund_no_stale_14d_window` FAIL |
+| `data/docs/*.txt` (canonical policy docs) | Source-of-truth nội bộ (file) → dùng để đối chiếu version khi cần | Canonical cập nhật nhưng export raw chưa cập nhật; mismatch `doc_id`; drift nội dung (stale chunk vẫn xuất hiện) | Retrieval eval `hits_forbidden`/`topk_has_stale`; alert nếu chunk chứa marker stale (vd “14 ngày làm việc”, “10 ngày phép năm”) xuất hiện trong top-k |
 
 ---
 
