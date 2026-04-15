@@ -1,7 +1,9 @@
 # Báo Cáo Cá Nhân — Lab Day 10: Data Pipeline & Observability
 
-**Họ và tên:** Anh Lương
+**Họ và tên:** Lương Hoàng Anh
+
 **Vai trò:** Monitoring / Docs Owner
+
 **Ngày nộp:** 2026-04-15
 
 ---
