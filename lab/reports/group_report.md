@@ -115,3 +115,15 @@ Pipeline Day 10 lam moi corpus cho retrieval cua multi-agent Day 09. Sau khi emb
 - Inject chi test 1 scenario (refund stale). Co the mo rong: inject duplicate them, sai doc_id moi, chunk co marker trong doc khong phai refund.
 - `chunk_id` phu thuoc `seq` — neu thu tu row thay doi, id thay doi va prune xoa het. Can xem xet content-only hash.
 - Chua co rollback mechanism — neu pipeline embed du lieu loi, can xoa collection va rebuild.
+
+---
+
+## 7. Kết quả Evaluation & Grading Run cuối cùng
+
+Dựa trên file `artifacts/eval/grading_run.jsonl` được sinh ra sau khi pipeline chạy hoàn thành chuẩn, cả 3 câu hỏi grading của hệ thống đều đạt kết quả tuyệt đối:
+
+- **Câu 1 (Refund policy - `gq_d10_01`)**: Truy xuất đúng `policy_refund_v4` (`contains_expected: true`), loại bỏ thành công quy định 14 ngày cũ (`hits_forbidden: false`).
+- **Câu 2 (P1 SLA - `gq_d10_02`)**: Truy xuất đúng thời gian phân tích SLA P1 (`sla_p1_2026`).
+- **Câu 3 (Leave policy - `gq_d10_03`)**: Vượt qua điều kiện top-1 strictly (`top1_doc_matches: true`), truy xuất đúng tài liệu `hr_leave_policy` và loại bỏ hoàn toàn số ngày phép cũ.
+
+**Tổng kết:** Vector store đầu ra hoàn toàn sạch và có chất lượng cao, đã sẵn sàng để tích hợp mượt mà cho các Agent RAG (tiếp nối kiến trúc từ Lab Day 09).
